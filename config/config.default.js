@@ -18,6 +18,8 @@ module.exports = appInfo => {
       validateOptions: null,
       // 校验错误处理
       errorHandler: null,
+      // 身份认证header key
+      securityHeaders: [],
     },
   };
 };

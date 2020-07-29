@@ -1,6 +1,6 @@
 {
   "name": "egg-docer",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "auto generate api docs with router define",
   "eggPlugin": {
     "name": "docer"
