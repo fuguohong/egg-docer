@@ -8,6 +8,7 @@ const path = require('path');
 
 module.exports = app => {
   require('./lib/route')(app);
+  require('./lib/namespace')(app);
   require('./lib/registUI')(app);
   // 自动加载app/routes下的文件
   const loadRouter = app.loader.loadRouter;

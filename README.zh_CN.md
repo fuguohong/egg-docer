@@ -40,25 +40,24 @@ config.docer = {
     }
 ```
 
-## 定义路由
+## route
 插件会自动加载 app/routes下的文件，使用`app.route(options)`定义路由,
-可以从`ctx.options`获取定义路由的配置对象,如果启用了自动校验，可以从`ctx.input`获取校验后的值
 
-## route options
 ```js
- // TODO 支持query参数，支持错误返回
   /**
+   * @param {object} options 参数
    * @param {string} options.method required，http verb
    * @param {string} options.path required, 接口路径
    * @param {function|Array<function>} options.handler 处理方法
-   * @param {object} [options.input] 参数schema定义
-   * @param {object} [options.output] 接口输出schema定义，仅用于生成文档，不会对返回值进行校验
+   * @param {object} [options.query] query参数schema定义,注意query参数不支持对象嵌套
+   * @param {object} [options.body] body参数schema定义
+   * @param {object} [options.response] 接口输出schema定义，仅用于生成文档，不会对返回值进行校验
    * @param {string|Array<string>} [options.tags] 接口标签
    * @param {string} [options.description] 接口描述
    */
 ```
 
-## 例子
+### route示例
 ```js
 // app/routes/user.js
 
@@ -82,8 +81,8 @@ module.exports = app => {
     path: prefix,
     method: 'post',
     description: '创建用户',
-    input: userSchema,
-    output: userSchema,
+    body: userSchema,
+    response: userSchema,
     handler: controller.user.create,
   });
 
@@ -92,12 +91,115 @@ module.exports = app => {
     method: 'get',
     path: prefix + '/:id',
     description: '获取指定用户信息',
-    output: userSchema,
+    response: userSchema,
     handler: controller.user.show,
   });
-};
 
+  app.route({
+    tags,
+    method: 'del',
+    path: prefix + '/:id',
+    description: '删除指定用户',
+    response: userSchema,
+    handler: controller.user.destroy,
+  });
+};
 ```
 
+## namespace
+`app.namespace(nsOptions)`返回一个namespace对象，可以指定一组路由使用共同的标签，前缀和中间件
+namespace对象拥有一个和`app.route`相同签名的`route`方法
+```js
+/**
+* @param {object} options nsOptions
+* @param {string} options.prefix 前缀
+* @param {string|Array<string>} options.tags 接口标签
+* @param {function|Array<function>} [options.middlewares] 中间就方法或方法数组
+* @return {Namespace} namespace对象
+*/
+```
 
+### namespace示例
+```js
+// app/routes/book.js
+module.exports = app => {
+  const { controller } = app;
+  const ns = app.namespace({
+    prefix: '/api/1/books',
+    tags: 'books',
+    middlewares: (ctx, next) => {
+      ctx.set('x-use-middlewares', 'true');
+      console.log('book middleware called');
+      next();
+    },
+  });
+
+  const bookSchema = Joi.object({
+    id: Joi.number().integer(),
+    title: Joi.string().max(32).description('名称'),
+    authorName: Joi.string().max(32).description('作者名称'),
+    authorId: Joi.number().description('作者id'),
+    summary: Joi.string().max(255).description('简介'),
+  });
+
+  ns.route({
+    path: '/',
+    method: 'post',
+    description: '创建图书',
+    body: bookSchema,
+    response: bookSchema,
+    handler: controller.book.create,
+  });
+
+  ns.route({
+    path: '/:id',
+    method: 'get',
+    description: '获取指定图书信息',
+    response: bookSchema,
+    handler: controller.book.show,
+  });
+
+
+  ns.route({
+    path: '/:id',
+    method: 'delete',
+    description: '删除图书',
+    response: bookSchema,
+    handler: controller.book.show,
+  });
+
+  ns.route({
+    path: '/:id',
+    method: 'patch',
+    description: '更新图书信息',
+    body: bookSchema,
+    response: bookSchema,
+    handler: controller.book.update,
+  });
+};
+```
+
+## context
+`context.routeOptions`指向定义路由时输入的参数
+```js
+app.route({
+    tags: 'users',
+    path: '/api/1/users',
+    method: 'post',
+    description: '创建用户',
+    body: userSchema,
+    response: userSchema,
+    handler: ctx=>{
+      console.log(ctx.routeOptions.tags) // users
+      console.log(ctx.routeOptions.body) // userSchema
+    },
+  });
+```
+
+`context.getParams():{body, query}`用于获取校验返回值，如果autoValidate=fasle则返回原始的输入参数
+```js
+// get /api/1/users?page=1&size=20
+const {query} = ctx.getParams();
+console.log(query) // {page:1, size:20}
+```
 
