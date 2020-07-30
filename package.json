@@ -1,6 +1,6 @@
 {
   "name": "egg-docer",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "auto generate api docs with router define",
   "eggPlugin": {
     "name": "docer"
@@ -12,7 +12,7 @@
     "api",
     "doc",
     "generate",
-    "validate"
+    "parameter"
   ],
   "dependencies": {
     "joi-to-swagger": "^4.0.0",
@@ -43,9 +43,10 @@
   },
   "files": [
     "app.js",
-    "agent.js",
+    "lib",
     "config",
-    "app"
+    "index.d.ts",
+    "view"
   ],
   "ci": {
     "version": "8, 10"
